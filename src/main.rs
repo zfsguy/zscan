@@ -60,10 +60,10 @@ fn compose_packet(command: Command, payload: &[u8]) -> Vec<u8> {
 }
 
 // Given a command vector, send it to the device
-fn send_command(device: &mut File, command: Command, payload: &[u8]) {
+fn send_command(device: &mut File, command: Command, payload: &[u8]) -> Vec<u8> {
     let packet = compose_packet(command, payload);
     device.write_all(&packet).unwrap();
-    println!("Sent {:?}: {}", command, hex_dump(&packet));
+    packet
 }
 
 // Given a device, read a packet and return it as a u8 vector
@@ -77,13 +77,15 @@ fn read_packet(device: &mut File) -> Vec<u8> {
     packet[0] = length_byte[0];
 
     device.read_exact(&mut packet[1..]).unwrap();
-    println!("Received: {}", hex_dump(&packet));
     packet
 }
 
 fn transact_command(device: &mut File, command: Command, payload: &[u8]) -> Vec<u8> {
-    send_command(device, command, payload);
-    read_packet(device)
+    let packet = send_command(device, command, payload);
+    println!("{:?} -> {}", command, hex_dump(&packet));
+    let packet = read_packet(device);
+    println!("{:?} <- {}", command, hex_dump(&packet));
+    packet
 }
 
 fn main() {
